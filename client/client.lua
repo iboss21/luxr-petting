@@ -51,18 +51,4 @@ local function PlayAnimation(pet)
     TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, 1500, 0, 0, false, false, false)
 end
 
--- Function to handle interaction
-local function HandleInteraction(petName, entity)
-    local pet = Config.Pets[petName]
-    if not pet then return end
-
-    local playerPed = PlayerPedId()
-
-    -- Make the player approach the entity
-    TaskGoToEntity(playerPed, entity, -1, 1.25, 0.5, 0, 0)
-
-    -- Play interaction animation
-    PlayAnimation(pet)
-
-    -- Trigger server event to reduce stress
-    TriggerServerEvent
+...
