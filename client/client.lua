@@ -132,3 +132,9 @@ CreateThread(function()
         ::continue::
     end
 end)
+
+--[[
+
+if (coffeee > 0) { code(); } else { sleep(); } 
+
+]]--
