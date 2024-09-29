@@ -70,4 +70,65 @@ local function HandleInteraction(petName, entity)
     -- Notify the player
     RSGCore:Notify(pet.Notification.Success, "success")
 end
-...
+
+CreateThread(function()
+    while true do
+        Wait(100)
+
+        local playerPed = PlayerPedId()
+        local pid = PlayerId()
+        local retval, entity = GetPlayerTargetEntity(pid)
+
+        -- If no entity is targeted, delete all prompts and reset cooldowns
+        if not entity or not DoesEntityExist(entity) then
+            for petName, _ in pairs(PedPrompt) do
+                DeletePrompt(petName)
+            end
+            cooldowns = {}
+            goto continue
+        end
+
+        local entityCoords = GetEntityCoords(entity)
+        local playerCoords = GetEntityCoords(playerPed)
+        local distance = #(playerCoords - entityCoords)
+
+        -- Iterate through all configured pets
+        for petName, pet in pairs(Config.Pets) do
+            if distance < (pet.InteractionDistance or Config.Global.DefaultInteractionDistance) then
+                local model_hash = GetEntityModel(entity)
+                if model_hash == pet.ModelHash then
+                    local promptGroup = PromptGetGroupIdForTargetEntity(entity)
+                    local promptName = pet.PromptText or Config.Global.DefaultPromptText
+
+                    if not PedPrompt[petName] then
+                        CreatePrompt(petName, promptGroup)
+                    end
+
+                    if PedPrompt[petName] and PromptHasHoldModeCompleted(PedPrompt[petName]) then
+                        if not cooldowns[petName] or cooldowns[petName] == 0 then
+                            HandleInteraction(petName, entity)
+                            cooldowns[petName] = Config.Pets[petName].Cooldown or Config.Global.DefaultCooldown
+                        end
+                    end
+                else
+                    -- Delete prompt if the targeted entity is not a pet
+                    DeletePrompt(petName)
+                end
+            else
+                -- Delete prompt if out of interaction distance
+                DeletePrompt(petName)
+            end
+        end
+
+        -- Handle cooldowns
+        for petName, cooldown in pairs(cooldowns) do
+            if cooldown > 0 then
+                cooldowns[petName] = cooldown - 1
+            else
+                cooldowns[petName] = 0
+            end
+        end
+
+        ::continue::
+    end
+end)
